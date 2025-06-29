@@ -373,7 +373,14 @@ function updatePopup()
 	for name, count in pairs(itemCounter) do
 		local cat = classifyItem(name)
 		if cat then
-			table.insert(categorized[cat], name .. " x" .. count)
+			-- ดึงจำนวนจริงจากชื่อ เช่น [X678]
+			local realCount = name:match("%[X(%d+)%]")
+			local cleanName = name:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
+			if realCount then
+				table.insert(categorized[cat], cleanName .. " x" .. realCount)
+			else
+				table.insert(categorized[cat], cleanName .. " x" .. count)
+			end
 		end
 	end
 
