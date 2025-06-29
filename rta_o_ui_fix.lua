@@ -1,3 +1,7 @@
+ช่วยเพิ่ม
+รายการของของทั้งหมด📦
+ กับปุ่ม 🔃 UI ในโค้ดนี้ครับ
+โค้ดนี้ใช้ได้ 
 --== CONFIG ==--
 local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ webhook ของคุณ
 local themes = {
@@ -40,14 +44,12 @@ local function classifyItem(name)
     if string.find(lower, "seed") then return "Seed" end
     if string.find(lower, "sprinkle") then return "Sprinkle" end
     if string.find(lower, "egg") then return "Egg" end
-    if string.find(lower, "gear") then return "Gear" end
 end
 
 local categoryNames = {
     Seed = "🌱 Seed",
     Sprinkle = "✨ Sprinkle",
-    Egg = "🥚 Egg",
-    Gear = "🛠 Gear"
+    Egg = "🥚 Egg"
 }
 
 --== UI SETUP ==--
@@ -56,10 +58,20 @@ local mainGui = Instance.new("ScreenGui", CoreGui)
 mainGui.Name = "RT_UI_MAIN"
 mainGui.ResetOnSpawn = false
 
+--== DRAGGABLE ICON BUTTON ==--
+local toggleIcon = Instance.new("ImageButton", mainGui)
+toggleIcon.Name = "ToggleButton"
+toggleIcon.Image = "rbxassetid://160515991" -- ไอคอนตามต้องการ
+toggleIcon.Size = UDim2.new(0, 40, 0, 40)
+toggleIcon.Position = UDim2.new(0, 20, 0.5, -20)
+toggleIcon.BackgroundTransparency = 1
+toggleIcon.Active = true
+toggleIcon.Draggable = true
+
 --== UI FRAME ==--
 local frame = Instance.new("Frame", mainGui)
 frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 250, 0, 400)
+frame.Size = UDim2.new(0, 250, 0, 240)
 frame.Position = UDim2.new(0.5, -125, 0.4, 0)
 frame.BackgroundColor3 = theme.background
 frame.Visible = true
@@ -72,7 +84,7 @@ header.BackgroundColor3 = theme.header
 header.TextColor3 = theme.accent
 header.Font = Enum.Font.GothamBold
 header.TextSize = 16
-header.Text = "🌌 RTaO HOOKS"
+header.Text = "🌌 RTaO HUB"
 header.BorderSizePixel = 0
 
 local status = Instance.new("TextLabel", frame)
@@ -84,48 +96,7 @@ status.Font = Enum.Font.Gotham
 status.TextSize = 14
 status.Text = "Status: 🟢 Online | " .. player.Name
 
---== 📦 DISPLAY ITEM SUMMARY ==--
-local itemSummary = Instance.new("TextLabel", frame)
-itemSummary.Position = UDim2.new(0.05, 0, 0, 55)
-itemSummary.Size = UDim2.new(0.9, 0, 0, 60)
-itemSummary.TextColor3 = theme.text
-itemSummary.Font = Enum.Font.Gotham
-itemSummary.TextSize = 12
-itemSummary.BackgroundTransparency = 1
-itemSummary.TextWrapped = true
-itemSummary.TextYAlignment = Enum.TextYAlignment.Top
-itemSummary.Text = "📦 รอข้อมูล..."
-
-local function updateItemSummary()
-    local seed, sprinkle, egg, gear = 0, 0, 0, 0
-    for name, count in pairs(itemCounter) do
-        local cat = classifyItem(name)
-        if cat == "Seed" then seed += 1
-        elseif cat == "Sprinkle" then sprinkle += 1
-        elseif cat == "Egg" then egg += 1
-        elseif cat == "Gear" then gear += 1
-        end
-    end
-    itemSummary.Text = string.format("📦 ของทั้งหมด:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด\n🛠 Gear: %d ชนิด", seed, sprinkle, egg, gear)
-end
-
---== UPDATE SUMMARY WHEN ITEM ADDED ==--
-backpack.ChildAdded:Connect(function(item)
-    local name = item.Name
-    local cat = classifyItem(name)
-    if not cat then return end
-
-    itemCounter[name] = (itemCounter[name] or 0) + 1
-    if notifyNew and not knownItems[name] then
-        knownItems[name] = true
-    end
-
-    updateItemSummary()
-end)
-
-updateItemSummary()
-
---== ปุ่มแสดง popup รายการทั้งหมด ย้ายขึ้นเหนือ summary ==--
+--== BUTTON FACTORY ==--
 local function makeButton(y, text, color, callback)
     local btn = Instance.new("TextButton", frame)
     btn.Position = UDim2.new(0.05, 0, 0, y)
@@ -139,77 +110,140 @@ local function makeButton(y, text, color, callback)
     return btn
 end
 
-local btnPopup = makeButton(5, "📋 รายการของทั้งหมด", theme.button, function()
-    popup.Visible = true
-    updatePopup()
+local btnNew, btnAll, btnSend, btnTheme
+
+btnNew = makeButton(60, "🆕 แจ้งของใหม่: ✅ เปิด", theme.button, function()
+    notifyNew = not notifyNew
+    btnNew.Text = "🆕 แจ้งของใหม่: " .. (notifyNew and "✅ เปิด" or "❌ ปิด")
 end)
 
---== POPUP แสดงของทั้งหมด ==--
-local popup = Instance.new("Frame", mainGui)
-popup.Size = UDim2.new(0, 280, 0, 250)
-popup.Position = UDim2.new(0.5, -140, 0.5, -125)
-popup.BackgroundColor3 = theme.background
-popup.Visible = false
-popup.Active = true
-popup.Draggable = true
-popup.BorderSizePixel = 0
-
-local popupHeader = Instance.new("TextLabel", popup)
-popupHeader.Size = UDim2.new(1, 0, 0, 30)
-popupHeader.BackgroundColor3 = theme.header
-popupHeader.TextColor3 = theme.accent
-popupHeader.Font = Enum.Font.GothamBold
-popupHeader.TextSize = 16
-popupHeader.Text = "📋 รายการของทั้งหมด"
-popupHeader.BorderSizePixel = 0
-
-local closeBtn = Instance.new("TextButton", popup)
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -30, 0, 0)
-closeBtn.Text = "❌"
-closeBtn.BackgroundColor3 = Color3.fromRGB(160, 60, 60)
-closeBtn.TextColor3 = Color3.new(1, 1, 1)
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 14
-closeBtn.MouseButton1Click:Connect(function()
-    popup.Visible = false
+btnAll = makeButton(95, "📦 ส่งทุก 20 นาที: ✅ เปิด", theme.button, function()
+    notifyAll = not notifyAll
+    btnAll.Text = "📦 ส่งทุก 20 นาที: " .. (notifyAll and "✅ เปิด" or "❌ ปิด")
 end)
 
-local popupContent = Instance.new("TextLabel", popup)
-popupContent.Position = UDim2.new(0, 10, 0, 35)
-popupContent.Size = UDim2.new(1, -20, 1, -45)
-popupContent.BackgroundTransparency = 1
-popupContent.TextColor3 = theme.text
-popupContent.Font = Enum.Font.Gotham
-popupContent.TextSize = 13
-popupContent.TextWrapped = true
-popupContent.TextYAlignment = Enum.TextYAlignment.Top
-popupContent.TextXAlignment = Enum.TextXAlignment.Left
-popupContent.Text = "📦 กำลังโหลด..."
+btnSend = makeButton(130, "🚀 ส่งรายงานทันที", theme.button, function()
+    sendAllWebhook("📦 รายงานทั้งหมด (ทันที)")
+end)
 
-function updatePopup()
-    local lines = {}
-    local categorized = { Seed = {}, Sprinkle = {}, Egg = {}, Gear = {} }
+btnTheme = makeButton(165, "🎨 เปลี่ยนธีม", theme.button, function()
+    theme = (theme == themes.Default and themes.RoseGold) or themes.Default
+    frame.BackgroundColor3 = theme.background
+    header.BackgroundColor3 = theme.header
+    header.TextColor3 = theme.accent
+    status.TextColor3 = theme.text
+    for _, btn in ipairs(frame:GetChildren()) do
+        if btn:IsA("TextButton") then
+            btn.BackgroundColor3 = theme.button
+        end
+    end
+end)
 
+makeButton(200, "❌ ปิด UI", Color3.fromRGB(160, 60, 60), function()
+    frame.Visible = false
+end)
+
+--== TOGGLE BY ICON ==--
+toggleIcon.MouseButton1Click:Connect(function()
+    uiVisible = not uiVisible
+    frame.Visible = uiVisible
+end)
+
+--== WEBHOOK HELPERS ==--
+local function sendWebhook(fields, title)
+    local embedFields = {}
+    for cat, items in pairs(fields) do
+        if #items > 0 then
+            table.insert(embedFields, {
+                name = categoryNames[cat],
+                value = table.concat(items, "\n"),
+                inline = false
+            })
+        end
+    end
+    if #embedFields == 0 then return end
+
+    local data = {
+        username = "RTaO HUB",
+        embeds = {{
+            title = title,
+            color = 3066993,
+            fields = embedFields,
+            footer = { text = "👤 Roblox: " .. player.Name },
+            timestamp = DateTime.now():ToIsoDate()
+        }}
+    }
+
+    request({
+        Url = webhookUrl,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode(data)
+    })
+end
+
+function sendAllWebhook(customTitle)
+    local fields = { Seed = {}, Sprinkle = {}, Egg = {} }
     for name, count in pairs(itemCounter) do
         local cat = classifyItem(name)
         if cat then
-            local realCount = name:match("%[X(%d+)%]")
-            local cleanName = name:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
-            local finalLine = cleanName .. " x" .. (realCount or count)
-            table.insert(categorized[cat], finalLine)
+            table.insert(fields[cat], name .. " x" .. count)
         end
     end
-
-    for _, cat in ipairs({"Seed", "Sprinkle", "Egg", "Gear"}) do
-        if #categorized[cat] > 0 then
-            table.insert(lines, categoryNames[cat])
-            for _, item in ipairs(categorized[cat]) do
-                table.insert(lines, "- " .. item)
-            end
-            table.insert(lines, "")
-        end
-    end
-
-    popupContent.Text = #lines > 0 and table.concat(lines, "\n") or "📦 ยังไม่มีของใน Backpack"
+    sendWebhook(fields, customTitle or "📦 รายการของทั้งหมดใน Backpack")
 end
+
+local function sendNewItemWebhook(name)
+    local cat = classifyItem(name)
+    if not cat then return end
+    local data = {
+        username = "RTaO HUB",
+        embeds = {{
+            title = "🆕 พบของใหม่ใน Backpack!",
+            color = 16753920,
+            fields = {{
+                name = categoryNames[cat],
+                value = "**" .. name .. "** x1",
+                inline = false
+            }},
+            footer = { text = "👤 Roblox: " .. player.Name },
+            timestamp = DateTime.now():ToIsoDate()
+        }}
+    }
+    request({
+        Url = webhookUrl,
+        Method = "POST",
+        Headers = { ["Content-Type"] = "application/json" },
+        Body = HttpService:JSONEncode(data)
+    })
+end
+
+--== INIT DATA ==--
+for _, item in ipairs(backpack:GetChildren()) do
+    local cat = classifyItem(item.Name)
+    if cat then
+        knownItems[item.Name] = true
+        itemCounter[item.Name] = (itemCounter[item.Name] or 0) + 1
+    end
+end
+
+backpack.ChildAdded:Connect(function(item)
+    local name = item.Name
+    local cat = classifyItem(name)
+    if not cat then return end
+
+    itemCounter[name] = (itemCounter[name] or 0) + 1
+    if notifyNew and not knownItems[name] then
+        knownItems[name] = true
+        sendNewItemWebhook(name)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if notifyAll then
+            sendAllWebhook("📦 รายงานอัตโนมัติทุก 20 นาที")
+        end
+        task.wait(1200)
+    end
+end)
