@@ -305,5 +305,98 @@ toggleUIBtn.MouseButton1Click:Connect(function()
 	uiVisible = not uiVisible
 	frame.Visible = uiVisible
 end)
+--== 📋 POPUP แสดงรายการของทั้งหมดแบบแยกหมวดหมู่ ==--
+
+-- สร้าง Frame Popup
+local popup = Instance.new("Frame", mainGui)
+popup.Size = UDim2.new(0, 280, 0, 200)
+popup.Position = UDim2.new(0.5, -140, 0.5, -100)
+popup.BackgroundColor3 = theme.background
+popup.Visible = false
+popup.Active = true
+popup.Draggable = true
+popup.Name = "ItemPopup"
+popup.BorderSizePixel = 0
+
+-- Header ด้านบนของ popup
+local popupHeader = Instance.new("TextLabel", popup)
+popupHeader.Size = UDim2.new(1, 0, 0, 30)
+popupHeader.BackgroundColor3 = theme.header
+popupHeader.TextColor3 = theme.accent
+popupHeader.Font = Enum.Font.GothamBold
+popupHeader.TextSize = 16
+popupHeader.Text = "📋 รายการของทั้งหมด"
+popupHeader.BorderSizePixel = 0
+
+-- ปุ่มปิด popup
+local closeBtn = Instance.new("TextButton", popup)
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.Text = "❌"
+closeBtn.BackgroundColor3 = Color3.fromRGB(160, 60, 60)
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 14
+closeBtn.MouseButton1Click:Connect(function()
+	popup.Visible = false
+end)
+
+-- เนื้อหาใน popup
+local popupContent = Instance.new("TextLabel", popup)
+popupContent.Position = UDim2.new(0, 10, 0, 35)
+popupContent.Size = UDim2.new(1, -20, 1, -45)
+popupContent.BackgroundTransparency = 1
+popupContent.TextColor3 = theme.text
+popupContent.Font = Enum.Font.Gotham
+popupContent.TextSize = 13
+popupContent.TextWrapped = true
+popupContent.TextYAlignment = Enum.TextYAlignment.Top
+popupContent.TextXAlignment = Enum.TextXAlignment.Left
+popupContent.Text = "📦 กำลังโหลด..."
+
+-- ปุ่มกดเพื่อเปิด popup
+makeButton(235, "📋 รายการของทั้งหมด", theme.button, function()
+	updatePopup()
+	popup.Visible = true
+end)
+
+-- ฟังก์ชันแสดงของทั้งหมดแบบแยกหมวดหมู่
+function updatePopup()
+	local lines = {}
+
+	local categorized = {
+		Seed = {},
+		Sprinkle = {},
+		Egg = {}
+	}
+
+	for name, count in pairs(itemCounter) do
+		local cat = classifyItem(name)
+		if cat then
+			table.insert(categorized[cat], name .. " x" .. count)
+		end
+	end
+
+	for _, cat in ipairs({ "Seed", "Sprinkle", "Egg" }) do
+		if #categorized[cat] > 0 then
+			table.insert(lines, categoryNames[cat])
+			for _, item in ipairs(categorized[cat]) do
+				table.insert(lines, "- " .. item)
+			end
+			table.insert(lines, "") -- เว้นบรรทัด
+		end
+	end
+
+	if #lines == 0 then
+		popupContent.Text = "📦 ยังไม่มีของใน Backpack"
+	else
+		popupContent.Text = table.concat(lines, "\n")
+	end
+end
+
+-- อัปเดต popup ทุกครั้งที่มีของเพิ่ม
+backpack.ChildAdded:Connect(function()
+	updatePopup()
+end)
 
 
