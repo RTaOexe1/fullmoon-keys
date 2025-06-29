@@ -1,6 +1,6 @@
 -- RTaO HUB - Backpack Tracker (Real-time UI + Webhook)
 
-local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ Webhook ของคุณ
+local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe"
 
 --== SERVICES ==--
 local Players = game:GetService("Players")
@@ -87,16 +87,15 @@ local summary = Instance.new("TextLabel", frame)
 summary.Size = UDim2.new(1, -20, 0, 60)
 summary.Position = UDim2.new(0, 10, 0, 50)
 summary.BackgroundTransparency = 1
-summary.TextColor3 = themes[currentTheme].text
-summary.Font = Enum.Font.Gotham
-summary.TextSize = 13
 summary.TextWrapped = true
 summary.TextYAlignment = Enum.TextYAlignment.Top
+summary.Font = Enum.Font.Gotham
+summary.TextSize = 13
 summary.Text = "📦 รอข้อมูล..."
 
 local function updateSummary()
 	local seed, sprinkle, egg = 0, 0, 0
-	for name, count in pairs(itemCounter) do
+	for name, _ in pairs(itemCounter) do
 		local cat = classifyItem(name)
 		if cat == "Seed" then seed += 1
 		elseif cat == "Sprinkle" then sprinkle += 1
@@ -206,9 +205,26 @@ makeButton(240, "🎨 เปลี่ยนธีม", function()
 	applyTheme(currentTheme)
 end)
 
-
-
 applyTheme(currentTheme)
+
+-- ปุ่มย่อ/แสดง UI และลากได้
+local toggleButton = Instance.new("TextButton", gui)
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
+toggleButton.Text = "📌"
+toggleButton.BackgroundColor3 = themes[currentTheme].topbar
+toggleButton.TextColor3 = themes[currentTheme].text
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 20
+toggleButton.ZIndex = 10
+toggleButton.Active = true
+toggleButton.Draggable = true
+
+local isMinimized = false
+toggleButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	frame.Visible = not isMinimized
+end)
 
 --== WEBHOOK SYSTEM ==--
 function sendAllWebhook(customTitle)
@@ -232,26 +248,7 @@ function sendAllWebhook(customTitle)
 	end
 	if #embedFields == 0 then return end
 
-	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image-- ปุ่มย่อ/แสดง UI และลากได้
-local toggleButton = Instance.new("TextButton", gui)
-toggleButton.Size = UDim2.new(0, 40, 0, 40)
-toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
-toggleButton.Text = "📌"
-toggleButton.BackgroundColor3 = themes[currentTheme].topbar
-toggleButton.TextColor3 = themes[currentTheme].text
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextSize = 20
-toggleButton.ZIndex = 10
-toggleButton.Active = true
-toggleButton.Draggable = true
-
--- แสดง/ซ่อน Frame หลัก
-local isMinimized = false
-toggleButton.MouseButton1Click:Connect(function()
-	isMinimized = not isMinimized
-	frame.Visible = not isMinimized
-end)?userId=" .. player.UserId .. "&width=150&height=150&format=png"
-
+	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
 	local data = {
 		username = "RTaO HUB",
 		avatar_url = avatarUrl,
@@ -277,7 +274,6 @@ local function sendNewItemWebhook(name)
 	if not cat then return end
 
 	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
-
 	local data = {
 		username = "RTaO HUB",
 		avatar_url = avatarUrl,
