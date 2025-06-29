@@ -62,7 +62,7 @@ gui.Name = "RTaO_HUB_UI"
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 290)
+frame.Size = UDim2.new(0, 240, 0, 290)
 frame.Position = UDim2.new(0.5, -120, 0.4, 0)
 frame.BackgroundTransparency = 0.05
 frame.BorderSizePixel = 0
