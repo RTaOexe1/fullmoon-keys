@@ -285,9 +285,25 @@ backpack.ChildAdded:Connect(function(item)
     updateItemSummary() -- อัปเดต UI
 end)
 
---== 🔃 ปุ่ม UI Toggle ใหม่ (แทน toggleIcon ที่ลอยอยู่) ==--
-makeButton(235, "🔃 UI", theme.button, function()
-    uiVisible = not uiVisible
-    frame.Visible = uiVisible
+--== 🔃 ปุ่ม UI Toggle (อยู่นอก frame และลากได้) ==--
+local toggleUIBtn = Instance.new("TextButton", mainGui)
+toggleUIBtn.Name = "ToggleUI"
+toggleUIBtn.Size = UDim2.new(0, 80, 0, 30)
+toggleUIBtn.Position = UDim2.new(0, 20, 1, -50) -- ปรับตำแหน่งตามต้องการ
+toggleUIBtn.BackgroundColor3 = theme.button
+toggleUIBtn.TextColor3 = theme.text
+toggleUIBtn.Font = Enum.Font.GothamBold
+toggleUIBtn.TextSize = 14
+toggleUIBtn.Text = "🔃 UI"
+toggleUIBtn.TextStrokeTransparency = 0.5
+
+-- ✅ ทำให้ลากได้
+toggleUIBtn.Active = true
+toggleUIBtn.Draggable = true
+
+toggleUIBtn.MouseButton1Click:Connect(function()
+	uiVisible = not uiVisible
+	frame.Visible = uiVisible
 end)
+
 
