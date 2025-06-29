@@ -1,4 +1,4 @@
--- RTaO HUB - Backpack Tracker (Real-time UI + Webhook, Fixed Version)
+-- RTaO HUB - Backpack Tracker (Real-time UI + Webhook, Full Fixed Version)
 
 local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ Webhook ของคุณ
 
@@ -145,6 +145,74 @@ local btnAll = makeButton(150, "📦 แจ้งทุก 20 นาที: ✅"
 	print("notifyAll:", notifyAll)
 end)
 
+makeButton(180, "🚀 ส่งรายงานทันที", function()
+	sendAllWebhook("📦 รายงานของทั้งหมด (ส่งทันที)")
+end)
+
+makeButton(210, "📋 ดูรายละเอียดทั้งหมด", function()
+	local popup = Instance.new("Frame", gui)
+	popup.Size = UDim2.new(0, 300, 0, 280)
+	popup.Position = UDim2.new(0.5, -150, 0.5, -140)
+	popup.BackgroundColor3 = themes[currentTheme].background
+	popup.BorderSizePixel = 0
+
+	local title = Instance.new("TextLabel", popup)
+	title.Size = UDim2.new(1, 0, 0, 30)
+	title.Text = "📋 รายละเอียดไอเทม"
+	title.BackgroundColor3 = themes[currentTheme].topbar
+	title.TextColor3 = themes[currentTheme].text
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 14
+
+	local scroll = Instance.new("ScrollingFrame", popup)
+	scroll.Size = UDim2.new(1, -10, 1, -40)
+	scroll.Position = UDim2.new(0, 5, 0, 35)
+	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+	scroll.ScrollBarThickness = 6
+	scroll.BackgroundTransparency = 1
+
+	local layout = Instance.new("UIListLayout", scroll)
+	layout.Padding = UDim.new(0, 4)
+	layout.SortOrder = Enum.SortOrder.Name
+
+	for name, count in pairs(itemCounter) do
+		local item = Instance.new("TextLabel", scroll)
+		item.Size = UDim2.new(1, -10, 0, 20)
+		item.BackgroundTransparency = 1
+		item.TextColor3 = themes[currentTheme].text
+		item.Font = Enum.Font.Gotham
+		item.TextSize = 13
+		item.Text = string.format("• %s x%d", name, count)
+	end
+
+	scroll.CanvasSize = UDim2.new(0, 0, 0, #scroll:GetChildren() * 22)
+
+	local close = Instance.new("TextButton", popup)
+	close.Size = UDim2.new(0, 80, 0, 25)
+	close.Position = UDim2.new(1, -85, 0, 5)
+	close.Text = "❌ ปิด"
+	close.Font = Enum.Font.GothamBold
+	close.TextSize = 12
+	close.TextColor3 = Color3.new(1,1,1)
+	close.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
+	close.MouseButton1Click:Connect(function()
+		popup:Destroy()
+	end)
+end)
+
+makeButton(240, "🎨 เปลี่ยนธีม", function()
+	local themeNames = {}
+	for name in pairs(themes) do table.insert(themeNames, name) end
+	local index = table.find(themeNames, currentTheme) or 1
+	local nextIndex = (index % #themeNames) + 1
+	currentTheme = themeNames[nextIndex]
+	applyTheme(currentTheme)
+end)
+
+makeButton(270, "❌ ปิด UI", function()
+	gui.Enabled = false
+end)
+
 -- ปุ่ม toggle UI ใหม่แบบไม่หาย
 local toggleButton = Instance.new("TextButton", gui)
 toggleButton.Size = UDim2.new(0, 80, 0, 30)
@@ -159,5 +227,114 @@ toggleButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- (ส่วนที่เหลือเหมือนเดิม, ไม่เปลี่ยนเพื่อความย่อ)
--- อย่าลืมตรวจสอบว่า webhookUrl ถูกตั้งค่าเป็นของจริงแล้วด้วย!
+--== Apply Theme ==--
+applyTheme(currentTheme)
+
+--== WEBHOOK SYSTEM ==--
+
+function sendAllWebhook(customTitle)
+	local fields = { Seed = {}, Sprinkle = {}, Egg = {} }
+	for name, count in pairs(itemCounter) do
+		local cat = classifyItem(name)
+		if cat then
+			table.insert(fields[cat], name .. " x" .. count)
+		end
+	end
+
+	local embedFields = {}
+	for cat, items in pairs(fields) do
+		if #items > 0 then
+			table.insert(embedFields, {
+				name = categoryNames[cat],
+				value = table.concat(items, "\n"),
+				inline = false
+			})
+		end
+	end
+	if #embedFields == 0 then return end
+
+	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+
+	local data = {
+		username = "RTaO HUB",
+		avatar_url = avatarUrl,
+		embeds = {{
+			title = customTitle or "📦 รายการของทั้งหมดใน Backpack",
+			color = 3066993,
+			fields = embedFields,
+			thumbnail = { url = avatarUrl },
+			footer = { text = "👤 Roblox: " .. player.Name },
+			timestamp = os.date("!%Y-%m-%dT%TZ")
+		}}
+	}
+	print("ส่ง webhook รายงานทั้งหมด")
+	request({
+		Url = webhookUrl,
+		Method = "POST",
+		Headers = { ["Content-Type"] = "application/json" },
+		Body = HttpService:JSONEncode(data)
+	})
+end
+
+local function sendNewItemWebhook(name)
+	local cat = classifyItem(name)
+	if not cat then return end
+
+	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+
+	local data = {
+		username = "RTaO HUB",
+		avatar_url = avatarUrl,
+		embeds = {{
+			title = "🆕 พบของใหม่ใน Backpack!",
+			color = 16753920,
+			fields = {{
+				name = categoryNames[cat],
+				value = "**" .. name .. "** x1",
+				inline = false
+			}},
+			thumbnail = { url = avatarUrl },
+			footer = { text = "👤 Roblox: " .. player.Name },
+			timestamp = os.date("!%Y-%m-%dT%TZ")
+		}}
+	}
+	print("ส่ง webhook รายงานของใหม่:", name)
+	request({
+		Url = webhookUrl,
+		Method = "POST",
+		Headers = { ["Content-Type"] = "application/json" },
+		Body = HttpService:JSONEncode(data)
+	})
+end
+
+--== INITIAL SCAN ==--
+for _, item in ipairs(backpack:GetChildren()) do
+	local cat = classifyItem(item.Name)
+	if cat then
+		knownItems[item.Name] = true
+		itemCounter[item.Name] = (itemCounter[item.Name] or 0) + 1
+	end
+end
+updateSummary()
+
+backpack.ChildAdded:Connect(function(item)
+	local name = item.Name
+	local cat = classifyItem(name)
+	if not cat then return end
+	itemCounter[name] = (itemCounter[name] or 0) + 1
+	if notifyNew and not knownItems[name] then
+		knownItems[name] = true
+		sendNewItemWebhook(name)
+	end
+	updateSummary()
+end)
+
+--== AUTO SEND ==--
+task.spawn(function()
+	while true do
+		if notifyAll then
+			sendAllWebhook("📦 รายงานอัตโนมัติทุก 20 นาที")
+		end
+		task.wait(1200)
+	end
+end)
