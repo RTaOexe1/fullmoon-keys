@@ -142,21 +142,24 @@ makeButton(180, "🚀 ส่งรายงานทันที", function()
   sendAllWebhook()
 end)
 
-makeButton(210, "❌ ปิด UI", function()
-  frame.Visible = false
-end)
-
---== TOGGLE UI BUTTON ==--
+-- ปุ่มย่อ/แสดง UI และลากได้
 local toggleButton = Instance.new("TextButton", gui)
-toggleButton.Size = UDim2.new(0, 80, 0, 30)
-toggleButton.Position = UDim2.new(0, 10, 0.9, -40)
-toggleButton.Text = "🔁 UI"
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
+toggleButton.Text = "🏔️"
+toggleButton.BackgroundColor3 = themes[currentTheme].topbar
+toggleButton.TextColor3 = themes[currentTheme].text
 toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextSize = 14
-toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
-toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.TextSize = 20
+toggleButton.ZIndex = 10
+toggleButton.Active = true
+toggleButton.Draggable = true
+
+-- แสดง/ซ่อน Frame หลัก
+local isMinimized = false
 toggleButton.MouseButton1Click:Connect(function()
-  frame.Visible = not frame.Visible
+	isMinimized = not isMinimized
+	frame.Visible = not isMinimized
 end)
 
 --== SUMMARY UPDATE ==--
