@@ -1,6 +1,6 @@
 local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe"
 
--- SERVICES --
+-- SERVICES
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local CoreGui = (gethui and gethui()) or game:GetService("CoreGui")
@@ -9,7 +9,7 @@ local backpack = player:WaitForChild("Backpack")
 local request = http_request or request or (syn and syn.request) or (fluxus and fluxus.request)
 if not request then return warn("❌ Executor ไม่รองรับ http request") end
 
--- ITEM CLASSIFY --
+-- ITEM CLASSIFY
 local function classifyItem(name)
 	local lower = string.lower(name)
 	if string.find(lower, "seed") then return "Seed" end
@@ -24,13 +24,13 @@ local categoryNames = {
 	Egg = "🥚 Egg"
 }
 
--- STORAGE --
+-- STORAGE
 local knownItems = {}
 local itemCounter = {}
 local notifyNew = true
 local notifyAll = true
 
--- THEME SYSTEM --
+-- THEME SYSTEM
 local themes = {
 	Dark = {
 		background = Color3.fromRGB(30, 30, 60),
@@ -66,11 +66,10 @@ frame.BackgroundTransparency = 0.05
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
-frame.Name = "MainFrame"
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🌌 RTaO_RS - Status"
+title.Text = "🌌 RTaO HUB - Status"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
@@ -134,10 +133,10 @@ end
 
 local function updateButtonState(button, state)
 	if state then
-		button.TextColor3 = Color3.fromRGB(0, 255, 0) -- เขียว
+		button.TextColor3 = Color3.fromRGB(0, 255, 0) -- สีเขียว
 		button.Text = button.Text:gsub("[❌✅]", "✅")
 	else
-		button.TextColor3 = Color3.fromRGB(255, 0, 0) -- แดง
+		button.TextColor3 = Color3.fromRGB(255, 0, 0) -- สีแดง
 		button.Text = button.Text:gsub("[❌✅]", "❌")
 	end
 end
@@ -175,7 +174,7 @@ updateButtonState(btnNew, notifyNew)
 updateButtonState(btnAll, notifyAll)
 updateStatusText()
 
--- ฟังก์ชันส่ง webhook (เพิ่ม pcall และ print debug)
+-- ฟังก์ชันส่ง webhook เพิ่ม debug
 local function sendWebhook(data)
 	local success, err = pcall(function()
 		request({
@@ -186,9 +185,9 @@ local function sendWebhook(data)
 		})
 	end)
 	if success then
-		print("ส่ง webhook สำเร็จ")
+		print("✅ ส่ง webhook สำเร็จ")
 	else
-		warn("ส่ง webhook ล้มเหลว: ".. tostring(err))
+		warn("❌ ส่ง webhook ล้มเหลว: ".. tostring(err))
 	end
 end
 
@@ -211,7 +210,10 @@ function sendAllWebhook(customTitle)
 			})
 		end
 	end
-	if #embedFields == 0 then return end
+	if #embedFields == 0 then
+		print("❌ ไม่มีของใน Backpack ส่ง webhook ไม่ได้")
+		return
+	end
 
 	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
 
@@ -227,7 +229,7 @@ function sendAllWebhook(customTitle)
 			timestamp = os.date("!%Y-%m-%dT%TZ")
 		}}
 	}
-	print("ส่ง webhook รายงานทั้งหมด")
+	print("🚀 กำลังส่ง webhook รายงานทั้งหมด")
 	sendWebhook(data)
 end
 
@@ -253,7 +255,7 @@ local function sendNewItemWebhook(name)
 			timestamp = os.date("!%Y-%m-%dT%TZ")
 		}}
 	}
-	print("ส่ง webhook รายงานของใหม่:", name)
+	print("🚀 กำลังส่ง webhook รายงานของใหม่: ".. name)
 	sendWebhook(data)
 end
 
@@ -261,7 +263,34 @@ makeButton(180, "🚀 ส่งรายงานทันที", function()
 	sendAllWebhook("📦 รายงานของทั้งหมด (ส่งทันที)")
 end)
 
--- Rest of your UI code here, including toggle UI, theme, etc.
+makeButton(210, "🎨 เปลี่ยนธีม", function()
+	local themeNames = {}
+	for name in pairs(themes) do table.insert(themeNames, name) end
+	local index = table.find(themeNames, currentTheme) or 1
+	local nextIndex = (index % #themeNames) + 1
+	currentTheme = themeNames[nextIndex]
+	applyTheme(currentTheme)
+	status.TextColor3 = themes[currentTheme].text
+	summary.TextColor3 = themes[currentTheme].text
+	statusDetail.TextColor3 = themes[currentTheme].text
+end)
+
+makeButton(240, "❌ ปิด UI", function()
+	gui.Enabled = false
+end)
+
+local toggleButton = Instance.new("TextButton", gui)
+toggleButton.Size = UDim2.new(0, 80, 0, 30)
+toggleButton.Position = UDim2.new(0, 10, 0.9, -40)
+toggleButton.Text = "🔁 UI"
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.MouseButton1Click:Connect(function()
+	gui.Enabled = not gui.Enabled
+end)
+
+-- APPLY THEME
+applyTheme(currentTheme)
 
 -- INITIAL SCAN
 for _, item in ipairs(backpack:GetChildren()) do
@@ -271,7 +300,6 @@ for _, item in ipairs(backpack:GetChildren()) do
 		itemCounter[item.Name] = (itemCounter[item.Name] or 0) + 1
 	end
 end
-
 updateSummary()
 
 backpack.ChildAdded:Connect(function(item)
@@ -292,6 +320,6 @@ task.spawn(function()
 		if notifyAll then
 			sendAllWebhook("📦 รายงานอัตโนมัติทุก 20 นาที")
 		end
-		task.wait(1200)
+		task.wait(1200) -- 20 นาที
 	end
 end)
