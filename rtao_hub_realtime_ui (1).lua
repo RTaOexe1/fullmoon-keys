@@ -67,7 +67,7 @@ toggleIcon.Draggable = true
 --== UI FRAME ==--
 local frame = Instance.new("Frame", mainGui)
 frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 250, 0, 240)
+frame.Size = UDim2.new(0, 250, 0, 295)
 frame.Position = UDim2.new(0.5, -125, 0.4, 0)
 frame.BackgroundColor3 = theme.background
 frame.Visible = true
