@@ -70,7 +70,7 @@ frame.Name = "MainFrame"
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🌌 RTaO HUB - Status"
+title.Text = "🌌 RTaO_RS - Status"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
