@@ -247,3 +247,50 @@ task.spawn(function()
         task.wait(1200)
     end
 end)
+--== 📦 DISPLAY ITEM SUMMARY ==--
+local itemSummary = Instance.new("TextLabel", frame)
+itemSummary.Position = UDim2.new(0.05, 0, 0, 235)
+itemSummary.Size = UDim2.new(0.9, 0, 0, 50)
+itemSummary.TextColor3 = theme.text
+itemSummary.Font = Enum.Font.Gotham
+itemSummary.TextSize = 12
+itemSummary.BackgroundTransparency = 1
+itemSummary.TextWrapped = true
+itemSummary.TextYAlignment = Enum.TextYAlignment.Top
+itemSummary.Text = "📦 รอข้อมูล..."
+
+local function updateItemSummary()
+    local seed, sprinkle, egg = 0, 0, 0
+    for name, count in pairs(itemCounter) do
+        local cat = classifyItem(name)
+        if cat == "Seed" then seed += 1
+        elseif cat == "Sprinkle" then sprinkle += 1
+        elseif cat == "Egg" then egg += 1
+        end
+    end
+    itemSummary.Text = string.format("📦 ของทั้งหมด:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด", seed, sprinkle, egg)
+end
+
+-- เรียกตอนเริ่ม
+updateItemSummary()
+
+--== UPDATE SUMMARY WHEN ITEM ADDED ==--
+backpack.ChildAdded:Connect(function(item)
+    local name = item.Name
+    local cat = classifyItem(name)
+    if not cat then return end
+
+    itemCounter[name] = (itemCounter[name] or 0) + 1
+    if notifyNew and not knownItems[name] then
+        knownItems[name] = true
+        sendNewItemWebhook(name)
+    end
+
+    updateItemSummary() -- อัปเดต UI
+end)
+
+--== 🔃 ปุ่ม UI Toggle ใหม่ (แทน toggleIcon ที่ลอยอยู่) ==--
+makeButton(235, "🔃 UI", theme.button, function()
+    uiVisible = not uiVisible
+    frame.Visible = uiVisible
+end)
