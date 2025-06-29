@@ -1,4 +1,4 @@
--- RTaO HUB - Backpack Tracker (Fixed Drag + Toggle UI)
+-- RTaO HUB - Backpack Tracker (Full UI Functionality + Drag Fix)
 
 local webhookUrl = "https://discord.com/api/webhooks/xxxxxxxxxx" -- ใส่ Webhook ของคุณ
 
@@ -54,67 +54,53 @@ gui.Parent = CoreGui
 gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 240, 0, 320)
-frame.Position = UDim2.new(0.5, -120, 0.4, 0)
-frame.BackgroundTransparency = 0.05
+frame.Size = UDim2.new(0, 260, 0, 340)
+frame.Position = UDim2.new(0.5, -130, 0.4, 0)
+frame.BackgroundColor3 = themes[currentTheme].background
 frame.BorderSizePixel = 0
 frame.Active = true
+frame.Draggable = false
 
-local dragToggle = false
-local dragInput, dragStart, startPos
+--== DRAG SUPPORT ==--
+local dragging, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
   if input.UserInputType == Enum.UserInputType.MouseButton1 then
-    dragToggle = true
+    dragging = true
     dragStart = input.Position
     startPos = frame.Position
+    input.Changed:Connect(function()
+      if input.UserInputState == Enum.UserInputState.End then
+        dragging = false
+      end
+    end)
   end
 end)
 
 UIS.InputChanged:Connect(function(input)
-  if dragToggle and input.UserInputType == Enum.UserInputType.MouseMovement then
+  if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
     local delta = input.Position - dragStart
-    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
-                               startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
   end
 end)
 
-UIS.InputEnded:Connect(function(input)
-  if input.UserInputType == Enum.UserInputType.MouseButton1 then
-    dragToggle = false
-  end
-end)
-
---== TOGGLE BUTTON ==--
-local toggleButton = Instance.new("TextButton", gui)
-toggleButton.Size = UDim2.new(0, 60, 0, 28)
-toggleButton.Position = UDim2.new(0, 10, 0.9, -30)
-toggleButton.Text = "🔁 UI"
-toggleButton.Font = Enum.Font.GothamBold
-toggleButton.TextSize = 14
-toggleButton.BackgroundColor3 = Color3.fromRGB(80, 120, 180)
-toggleButton.TextColor3 = Color3.new(1,1,1)
-toggleButton.MouseButton1Click:Connect(function()
-  frame.Visible = not frame.Visible
-end)
-
---== HEADER ==--
+--== TITLE BAR ==--
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Text = "🌌 RTaO HUB - Status"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 16
 title.BackgroundColor3 = themes[currentTheme].topbar
 title.TextColor3 = themes[currentTheme].text
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
 
 local status = Instance.new("TextLabel", frame)
 status.Size = UDim2.new(1, 0, 0, 20)
 status.Position = UDim2.new(0, 0, 0, 30)
 status.Text = "Status = Online 🟢 | " .. player.Name
-status.Font = Enum.Font.Gotham
-status.TextSize = 14
 status.BackgroundTransparency = 1
 status.TextColor3 = themes[currentTheme].text
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
 
 local summary = Instance.new("TextLabel", frame)
 summary.Size = UDim2.new(1, -20, 0, 60)
@@ -127,7 +113,53 @@ summary.TextWrapped = true
 summary.TextYAlignment = Enum.TextYAlignment.Top
 summary.Text = "📦 รอข้อมูล..."
 
---== UPDATE SUMMARY ==--
+--== BUTTON ==--
+local function makeButton(y, text, callback)
+  local btn = Instance.new("TextButton", frame)
+  btn.Size = UDim2.new(0.9, 0, 0, 28)
+  btn.Position = UDim2.new(0.05, 0, 0, y)
+  btn.Font = Enum.Font.GothamBold
+  btn.TextSize = 14
+  btn.BackgroundColor3 = themes[currentTheme].button
+  btn.TextColor3 = themes[currentTheme].text
+  btn.Text = text
+  btn.MouseButton1Click:Connect(callback)
+  return btn
+end
+
+--== BUTTON LIST ==--
+local btnNew = makeButton(120, "🆕 แจ้งของใหม่: ✅", function()
+  notifyNew = not notifyNew
+  btnNew.Text = "🆕 แจ้งของใหม่: " .. (notifyNew and "✅" or "❌")
+end)
+
+local btnAll = makeButton(150, "📦 แจ้งทุก 20 นาที: ✅", function()
+  notifyAll = not notifyAll
+  btnAll.Text = "📦 แจ้งทุก 20 นาที: " .. (notifyAll and "✅" or "❌")
+end)
+
+makeButton(180, "🚀 ส่งรายงานทันที", function()
+  sendAllWebhook()
+end)
+
+makeButton(210, "❌ ปิด UI", function()
+  frame.Visible = false
+end)
+
+--== TOGGLE UI BUTTON ==--
+local toggleButton = Instance.new("TextButton", gui)
+toggleButton.Size = UDim2.new(0, 80, 0, 30)
+toggleButton.Position = UDim2.new(0, 10, 0.9, -40)
+toggleButton.Text = "🔁 UI"
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 14
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 100)
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.MouseButton1Click:Connect(function()
+  frame.Visible = not frame.Visible
+end)
+
+--== SUMMARY UPDATE ==--
 local function updateSummary()
   local seed, sprinkle, egg = 0, 0, 0
   for name, _ in pairs(itemCounter) do
@@ -139,7 +171,7 @@ local function updateSummary()
   summary.Text = string.format("📦 รายการใน Backpack:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด", seed, sprinkle, egg)
 end
 
---== WEBHOOK ==--
+--== WEBHOOK SEND ==--
 function sendAllWebhook()
   local fields = { Seed = {}, Sprinkle = {}, Egg = {} }
   for name, count in pairs(itemCounter) do
@@ -164,7 +196,7 @@ function sendAllWebhook()
   local data = {
     username = "RTaO HUB",
     embeds = {{
-      title = "📦 รายงานของทั้งหมดใน Backpack",
+      title = "📦 รายการของทั้งหมดใน Backpack",
       color = 3066993,
       fields = embedFields,
       footer = { text = "👤 Roblox: " .. player.Name },
@@ -179,7 +211,7 @@ function sendAllWebhook()
   })
 end
 
---== BACKPACK MONITOR ==--
+--== INITIAL BACKPACK SCAN ==--
 for _, item in ipairs(backpack:GetChildren()) do
   local cat = classifyItem(item.Name)
   if cat then
@@ -189,6 +221,7 @@ for _, item in ipairs(backpack:GetChildren()) do
 end
 updateSummary()
 
+--== BACKPACK LISTENER ==--
 backpack.ChildAdded:Connect(function(item)
   local name = item.Name
   local cat = classifyItem(name)
@@ -200,7 +233,7 @@ backpack.ChildAdded:Connect(function(item)
   updateSummary()
 end)
 
---== AUTO SEND LOOP ==--
+--== AUTO LOOP ==--
 task.spawn(function()
   while true do
     if notifyAll then
@@ -209,6 +242,3 @@ task.spawn(function()
     task.wait(1200)
   end
 end)
-
---== APPLY THEME ==--
-frame.BackgroundColor3 = themes[currentTheme].background
