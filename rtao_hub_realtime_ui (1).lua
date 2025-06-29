@@ -106,7 +106,7 @@ local function makeButton(y, text, color, callback)
     return btn
 end
 
-local btnNew, btnAll, btnSend, btnTheme
+local btnNew, btnAll, btnSend, btnTheme, btnItems
 
 btnNew = makeButton(60, "🆕 แจ้งของใหม่: ✅ เปิด", theme.button, function()
     notifyNew = not notifyNew
@@ -133,17 +133,57 @@ btnTheme = makeButton(165, "🎨 เปลี่ยนธีม", theme.button, 
             btn.BackgroundColor3 = theme.button
         end
     end
-    itemSummary.TextColor3 = theme.text
 end)
 
---== ปรับตำแหน่งปุ่มรายการของทั้งหมดให้อยู่ล่าง ไม่ทับข้อความ ==
-local btnItems = makeButton(270, "📋 รายการของทั้งหมด", theme.button, function()
+-- ย้ายปุ่มรายการของทั้งหมดให้อยู่เหนือข้อความสรุป itemSummary
+btnItems = makeButton(210, "📋 รายการของทั้งหมด", theme.button, function()
     updatePopup()
     popup.Visible = true
 end)
 
---== ลบปุ่ม ❌ ปิด UI ออก ==
--- (ตัดโค้ด makeButton(200, "❌ ปิด UI", ...) ออกไปเลย)
+--== ลบปุ่ม ❌ ปิด UI ออก
+
+--== TEXT LABEL แสดงสรุปจำนวนของทั้งหมด (เลื่อนลงมาเล็กน้อย) ==--
+local itemSummary = Instance.new("TextLabel", frame)
+itemSummary.Position = UDim2.new(0.05, 0, 0, 245)
+itemSummary.Size = UDim2.new(0.9, 0, 0, 50)
+itemSummary.TextColor3 = theme.text
+itemSummary.Font = Enum.Font.Gotham
+itemSummary.TextSize = 12
+itemSummary.BackgroundTransparency = 1
+itemSummary.TextWrapped = true
+itemSummary.TextYAlignment = Enum.TextYAlignment.Top
+itemSummary.Text = "📦 รอข้อมูล..."
+
+local function updateItemSummary()
+    local seed, sprinkle, egg = 0, 0, 0
+    for name, count in pairs(itemCounter) do
+        local cat = classifyItem(name)
+        if cat == "Seed" then seed += 1
+        elseif cat == "Sprinkle" then sprinkle += 1
+        elseif cat == "Egg" then egg += 1
+        end
+    end
+    itemSummary.Text = string.format("📦 ของทั้งหมด:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด", seed, sprinkle, egg)
+end
+
+-- เรียกอัพเดตตอนเริ่ม
+updateItemSummary()
+
+--== UPDATE SUMMARY WHEN ITEM ADDED ==--
+backpack.ChildAdded:Connect(function(item)
+    local name = item.Name
+    local cat = classifyItem(name)
+    if not cat then return end
+
+    itemCounter[name] = (itemCounter[name] or 0) + 1
+    if notifyNew and not knownItems[name] then
+        knownItems[name] = true
+        sendNewItemWebhook(name)
+    end
+
+    updateItemSummary() -- อัปเดต UI
+end)
 
 --== TOGGLE BY ICON ==--
 toggleIcon.MouseButton1Click:Connect(function()
@@ -156,22 +196,9 @@ local function sendWebhook(fields, title)
     local embedFields = {}
     for cat, items in pairs(fields) do
         if #items > 0 then
-            -- แก้ไขให้ตัด [X###] ออกจากชื่อ item และแสดงจำนวนจริงแทน x1
-            local cleanItems = {}
-            for _, item in ipairs(items) do
-                -- item ตัวอย่าง: "Apple Seed [X678]"
-                local nameOnly = item:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
-                local countStr = item:match("%[X(%d+)%]")
-                if countStr then
-                    table.insert(cleanItems, nameOnly .. " x" .. countStr)
-                else
-                    table.insert(cleanItems, item)
-                end
-            end
-
             table.insert(embedFields, {
                 name = categoryNames[cat],
-                value = table.concat(cleanItems, "\n"),
+                value = table.concat(items, "\n"),
                 inline = false
             })
         end
@@ -202,12 +229,7 @@ function sendAllWebhook(customTitle)
     for name, count in pairs(itemCounter) do
         local cat = classifyItem(name)
         if cat then
-            -- ส่งชื่อ item แบบมี [X###] แทนจำนวนจริงเพื่อใช้ใน sendWebhook แก้ชื่อพร้อมจำนวน
-            local newName = name
-            if not name:find("%[X%d+%]") then
-                newName = name .. " [X" .. count .. "]"
-            end
-            table.insert(fields[cat], newName)
+            table.insert(fields[cat], name .. " x" .. count)
         end
     end
     sendWebhook(fields, customTitle or "📦 รายการของทั้งหมดใน Backpack")
@@ -257,8 +279,6 @@ backpack.ChildAdded:Connect(function(item)
         knownItems[name] = true
         sendNewItemWebhook(name)
     end
-    updateItemSummary()
-    updatePopup()
 end)
 
 task.spawn(function()
@@ -268,54 +288,6 @@ task.spawn(function()
         end
         task.wait(1200)
     end
-end)
-
---== 📦 DISPLAY ITEM SUMMARY ==--
-local itemSummary = Instance.new("TextLabel", frame)
-itemSummary.Position = UDim2.new(0.05, 0, 0, 230) -- ปรับตำแหน่งให้พ้นปุ่ม
-itemSummary.Size = UDim2.new(0.9, 0, 0, 50)
-itemSummary.TextColor3 = theme.text
-itemSummary.Font = Enum.Font.Gotham
-itemSummary.TextSize = 12
-itemSummary.BackgroundTransparency = 1
-itemSummary.TextWrapped = true
-itemSummary.TextYAlignment = Enum.TextYAlignment.Top
-itemSummary.Text = "📦 รอข้อมูล..."
-
-local function updateItemSummary()
-    local seed, sprinkle, egg = 0, 0, 0
-    for name, count in pairs(itemCounter) do
-        local cat = classifyItem(name)
-        if cat == "Seed" then seed += 1
-        elseif cat == "Sprinkle" then sprinkle += 1
-        elseif cat == "Egg" then egg += 1
-        end
-    end
-    itemSummary.Text = string.format("📦 ของทั้งหมด:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด", seed, sprinkle, egg)
-end
-
--- เรียกตอนเริ่ม
-updateItemSummary()
-
---== 🔃 ปุ่ม UI Toggle (อยู่นอก frame และลากได้) ==--
-local toggleUIBtn = Instance.new("TextButton", mainGui)
-toggleUIBtn.Name = "ToggleUI"
-toggleUIBtn.Size = UDim2.new(0, 80, 0, 30)
-toggleUIBtn.Position = UDim2.new(0, 20, 1, -50) -- ปรับตำแหน่งตามต้องการ
-toggleUIBtn.BackgroundColor3 = theme.button
-toggleUIBtn.TextColor3 = theme.text
-toggleUIBtn.Font = Enum.Font.GothamBold
-toggleUIBtn.TextSize = 14
-toggleUIBtn.Text = "🔃 UI"
-toggleUIBtn.TextStrokeTransparency = 0.5
-
--- ✅ ทำให้ลากได้
-toggleUIBtn.Active = true
-toggleUIBtn.Draggable = true
-
-toggleUIBtn.MouseButton1Click:Connect(function()
-	uiVisible = not uiVisible
-	frame.Visible = uiVisible
 end)
 
 --== 📋 POPUP แสดงรายการของทั้งหมดแบบแยกหมวดหมู่ ==--
@@ -351,7 +323,7 @@ closeBtn.TextColor3 = Color3.new(1, 1, 1)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 14
 closeBtn.MouseButton1Click:Connect(function()
-	popup.Visible = false
+    popup.Visible = false
 end)
 
 -- เนื้อหาใน popup
@@ -369,46 +341,46 @@ popupContent.Text = "📦 กำลังโหลด..."
 
 -- ฟังก์ชันแสดงของทั้งหมดแบบแยกหมวดหมู่
 function updatePopup()
-	local lines = {}
+    local lines = {}
 
-	local categorized = {
-		Seed = {},
-		Sprinkle = {},
-		Egg = {}
-	}
+    local categorized = {
+        Seed = {},
+        Sprinkle = {},
+        Egg = {}
+    }
 
-	for name, count in pairs(itemCounter) do
-		local cat = classifyItem(name)
-		if cat then
-			-- ดึงจำนวนจริงจากชื่อ เช่น [X678]
-			local realCount = name:match("%[X(%d+)%]")
-			local cleanName = name:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
-			if realCount then
-				table.insert(categorized[cat], cleanName .. " x" .. realCount)
-			else
-				table.insert(categorized[cat], cleanName .. " x" .. count)
-			end
-		end
-	end
+    for name, count in pairs(itemCounter) do
+        local cat = classifyItem(name)
+        if cat then
+            -- ดึงจำนวนจริงจากชื่อ เช่น [X678]
+            local realCount = name:match("%[X(%d+)%]")
+            local cleanName = name:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
+            if realCount then
+                table.insert(categorized[cat], cleanName .. " x" .. realCount)
+            else
+                table.insert(categorized[cat], cleanName .. " x" .. count)
+            end
+        end
+    end
 
-	for _, cat in ipairs({ "Seed", "Sprinkle", "Egg" }) do
-		if #categorized[cat] > 0 then
-			table.insert(lines, categoryNames[cat])
-			for _, item in ipairs(categorized[cat]) do
-				table.insert(lines, "- " .. item)
-			end
-			table.insert(lines, "") -- เว้นบรรทัด
-		end
-	end
+    for _, cat in ipairs({ "Seed", "Sprinkle", "Egg" }) do
+        if #categorized[cat] > 0 then
+            table.insert(lines, categoryNames[cat])
+            for _, item in ipairs(categorized[cat]) do
+                table.insert(lines, "- " .. item)
+            end
+            table.insert(lines, "") -- เว้นบรรทัด
+        end
+    end
 
-	if #lines == 0 then
-		popupContent.Text = "📦 ยังไม่มีของใน Backpack"
-	else
-		popupContent.Text = table.concat(lines, "\n")
-	end
+    if #lines == 0 then
+        popupContent.Text = "📦 ยังไม่มีของใน Backpack"
+    else
+        popupContent.Text = table.concat(lines, "\n")
+    end
 end
 
 -- อัปเดต popup ทุกครั้งที่มีของเพิ่ม
 backpack.ChildAdded:Connect(function()
-	updatePopup()
+    updatePopup()
 end)
