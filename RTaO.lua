@@ -1,6 +1,5 @@
--- RTaO HUB - Backpack Tracker (Real-time UI + Webhook)
-
-local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe"
+-- RTaO HUB - Backpack Tracker (UI + Webhook)
+local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ Webhook ของคุณ
 
 --== SERVICES ==--
 local Players = game:GetService("Players")
@@ -27,35 +26,21 @@ local categoryNames = {
 }
 
 --== STORAGE ==--
-local knownItems = {}
-local itemCounter = {}
-local notifyNew = true
-local notifyAll = true
+local knownItems, itemCounter = {}, {}
+local notifyNew, notifyAll = true, true
 
---== THEME SYSTEM ==--
+--== THEME ==--
 local themes = {
 	Dark = {
 		background = Color3.fromRGB(30, 30, 60),
 		topbar = Color3.fromRGB(40, 40, 80),
 		button = Color3.fromRGB(60, 60, 100),
 		text = Color3.new(1, 1, 1)
-	},
-	Light = {
-		background = Color3.fromRGB(230, 230, 250),
-		topbar = Color3.fromRGB(200, 200, 255),
-		button = Color3.fromRGB(170, 170, 220),
-		text = Color3.fromRGB(0.1, 0.1, 0.2)
-	},
-	Emerald = {
-		background = Color3.fromRGB(22, 40, 35),
-		topbar = Color3.fromRGB(30, 60, 50),
-		button = Color3.fromRGB(40, 100, 80),
-		text = Color3.fromRGB(180, 255, 200)
 	}
 }
 local currentTheme = "Dark"
 
---== UI ==--
+--== UI SETUP ==--
 if CoreGui:FindFirstChild("RTaO_HUB_UI") then CoreGui.RTaO_HUB_UI:Destroy() end
 local gui = Instance.new("ScreenGui", CoreGui)
 gui.Name = "RTaO_HUB_UI"
@@ -63,15 +48,16 @@ gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 260, 0, 320)
-frame.Position = UDim2.new(0.5, -120, 0.4, 0)
-frame.BackgroundTransparency = 0.05
+frame.Position = UDim2.new(0.5, -130, 0.4, 0)
+frame.BackgroundColor3 = themes[currentTheme].background
 frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
+frame.Active, frame.Draggable = true, true
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Text = "🌌 RTaO HUB - Status"
+title.BackgroundColor3 = themes[currentTheme].topbar
+title.TextColor3 = themes[currentTheme].text
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
 
@@ -82,158 +68,82 @@ status.Text = "Status = Online 🟢 | " .. player.Name
 status.Font = Enum.Font.Gotham
 status.TextSize = 14
 status.BackgroundTransparency = 1
+status.TextColor3 = themes[currentTheme].text
 
 local summary = Instance.new("TextLabel", frame)
 summary.Size = UDim2.new(1, -20, 0, 60)
 summary.Position = UDim2.new(0, 10, 0, 50)
 summary.BackgroundTransparency = 1
-summary.TextWrapped = true
-summary.TextYAlignment = Enum.TextYAlignment.Top
+summary.TextColor3 = themes[currentTheme].text
 summary.Font = Enum.Font.Gotham
 summary.TextSize = 13
+summary.TextWrapped = true
+summary.TextYAlignment = Enum.TextYAlignment.Top
 summary.Text = "📦 รอข้อมูล..."
 
 local function updateSummary()
 	local seed, sprinkle, egg = 0, 0, 0
-	for name, _ in pairs(itemCounter) do
+	for name in pairs(itemCounter) do
 		local cat = classifyItem(name)
 		if cat == "Seed" then seed += 1
 		elseif cat == "Sprinkle" then sprinkle += 1
 		elseif cat == "Egg" then egg += 1 end
 	end
-	summary.Text = string.format("📦 รายการใน Backpack:\n🌱 Seed: %d ชนิด\n✨ Sprinkle: %d ชนิด\n🥚 Egg: %d ชนิด", seed, sprinkle, egg)
+	summary.Text = string.format("📦 รายการใน Backpack:\n🌱 Seed: %d\n✨ Sprinkle: %d\n🥚 Egg: %d", seed, sprinkle, egg)
 end
 
-local function makeButton(y, label, callback)
-	local btn = Instance.new("TextButton", frame)
-	btn.Size = UDim2.new(0.9, 0, 0, 28)
-	btn.Position = UDim2.new(0.05, 0, 0, y)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 14
-	btn.Text = label
-	btn.MouseButton1Click:Connect(callback)
-	return btn
+local function makeButton(y, text, callback)
+	local b = Instance.new("TextButton", frame)
+	b.Size = UDim2.new(0.9, 0, 0, 28)
+	b.Position = UDim2.new(0.05, 0, 0, y)
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 14
+	b.TextColor3 = themes[currentTheme].text
+	b.BackgroundColor3 = themes[currentTheme].button
+	b.Text = text
+	b.MouseButton1Click:Connect(callback)
+	return b
 end
 
-local function applyTheme(name)
-	local t = themes[name]
-	if not t then return end
-	frame.BackgroundColor3 = t.background
-	title.BackgroundColor3 = t.topbar
-	title.TextColor3 = t.text
-	status.TextColor3 = t.text
-	summary.TextColor3 = t.text
-	for _, v in pairs(frame:GetChildren()) do
-		if v:IsA("TextButton") then
-			v.BackgroundColor3 = t.button
-			v.TextColor3 = t.text
-		end
-	end
-end
+local btnNew, btnAll
 
-local btnNew = makeButton(120, "🆕 แจ้งของใหม่: ✅", function()
+btnNew = makeButton(120, "🆕 แจ้งของใหม่: เปิด ✅", function()
 	notifyNew = not notifyNew
-	btnNew.Text = "🆕 แจ้งของใหม่: " .. (notifyNew and "✅" or "❌")
+	btnNew.Text = "🆕 แจ้งของใหม่: " .. (notifyNew and "เปิด ✅" or "ปิด ❌")
 end)
 
-local btnAll = makeButton(150, "📦 แจ้งทุก 20 นาที: ✅", function()
+btnAll = makeButton(150, "📦 แจ้งทุก 20 นาที: เปิด ✅", function()
 	notifyAll = not notifyAll
-	btnAll.Text = "📦 แจ้งทุก 20 นาที: " .. (notifyAll and "✅" or "❌")
+	btnAll.Text = "📦 แจ้งทุก 20 นาที: " .. (notifyAll and "เปิด ✅" or "ปิด ❌")
 end)
 
 makeButton(180, "🚀 ส่งรายงานทันที", function()
 	sendAllWebhook("📦 รายงานของทั้งหมด (ส่งทันที)")
 end)
 
-makeButton(210, "📋 ดูรายละเอียดทั้งหมด", function()
-	local popup = Instance.new("Frame", gui)
-	popup.Size = UDim2.new(0, 300, 0, 280)
-	popup.Position = UDim2.new(0.5, -150, 0.5, -140)
-	popup.BackgroundColor3 = themes[currentTheme].background
-	popup.BorderSizePixel = 0
-
-	local title = Instance.new("TextLabel", popup)
-	title.Size = UDim2.new(1, 0, 0, 30)
-	title.Text = "📋 รายละเอียดไอเทม"
-	title.BackgroundColor3 = themes[currentTheme].topbar
-	title.TextColor3 = themes[currentTheme].text
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 14
-
-	local scroll = Instance.new("ScrollingFrame", popup)
-	scroll.Size = UDim2.new(1, -10, 1, -40)
-	scroll.Position = UDim2.new(0, 5, 0, 35)
-	scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-	scroll.ScrollBarThickness = 6
-	scroll.BackgroundTransparency = 1
-
-	local layout = Instance.new("UIListLayout", scroll)
-	layout.Padding = UDim.new(0, 4)
-	layout.SortOrder = Enum.SortOrder.Name
-
-	for name, count in pairs(itemCounter) do
-		local item = Instance.new("TextLabel", scroll)
-		item.Size = UDim2.new(1, -10, 0, 20)
-		item.BackgroundTransparency = 1
-		item.TextColor3 = themes[currentTheme].text
-		item.Font = Enum.Font.Gotham
-		item.TextSize = 13
-		item.Text = string.format("• %s x%d", name, count)
-	end
-
-	scroll.CanvasSize = UDim2.new(0, 0, 0, #scroll:GetChildren() * 22)
-
-	local close = Instance.new("TextButton", popup)
-	close.Size = UDim2.new(0, 80, 0, 25)
-	close.Position = UDim2.new(1, -85, 0, 5)
-	close.Text = "❌ ปิด"
-	close.Font = Enum.Font.GothamBold
-	close.TextSize = 12
-	close.TextColor3 = Color3.new(1,1,1)
-	close.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
-	close.MouseButton1Click:Connect(function()
-		popup:Destroy()
-	end)
-end)
-
-makeButton(240, "🎨 เปลี่ยนธีม", function()
-	local themeNames = {}
-	for name in pairs(themes) do table.insert(themeNames, name) end
-	local index = table.find(themeNames, currentTheme) or 1
-	local nextIndex = (index % #themeNames) + 1
-	currentTheme = themeNames[nextIndex]
-	applyTheme(currentTheme)
-end)
-
-applyTheme(currentTheme)
-
--- ปุ่มย่อ/แสดง UI และลากได้
+-- ปุ่มแสดง/ซ่อน
 local toggleButton = Instance.new("TextButton", gui)
 toggleButton.Size = UDim2.new(0, 40, 0, 40)
 toggleButton.Position = UDim2.new(0, 20, 0.5, -20)
 toggleButton.Text = "📌"
-toggleButton.BackgroundColor3 = themes[currentTheme].topbar
-toggleButton.TextColor3 = themes[currentTheme].text
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.TextSize = 20
-toggleButton.ZIndex = 10
+toggleButton.BackgroundColor3 = themes[currentTheme].topbar
+toggleButton.TextColor3 = themes[currentTheme].text
 toggleButton.Active = true
 toggleButton.Draggable = true
-
-local isMinimized = false
+local minimized = false
 toggleButton.MouseButton1Click:Connect(function()
-	isMinimized = not isMinimized
-	frame.Visible = not isMinimized
+	minimized = not minimized
+	frame.Visible = not minimized
 end)
 
---== WEBHOOK SYSTEM ==--
-function sendAllWebhook(customTitle)
+--== WEBHOOK FUNCTIONS ==--
+function sendAllWebhook(titleText)
 	local fields = { Seed = {}, Sprinkle = {}, Egg = {} }
 	for name, count in pairs(itemCounter) do
 		local cat = classifyItem(name)
-		if cat then
-			table.insert(fields[cat], name .. " x" .. count)
-		end
+		if cat then table.insert(fields[cat], name .. " x" .. count) end
 	end
 
 	local embedFields = {}
@@ -249,11 +159,11 @@ function sendAllWebhook(customTitle)
 	if #embedFields == 0 then return end
 
 	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
-	local data = {
+	local payload = {
 		username = "RTaO HUB",
 		avatar_url = avatarUrl,
 		embeds = {{
-			title = customTitle or "📦 รายการของทั้งหมดใน Backpack",
+			title = titleText,
 			color = 3066993,
 			fields = embedFields,
 			thumbnail = { url = avatarUrl },
@@ -261,20 +171,25 @@ function sendAllWebhook(customTitle)
 			timestamp = os.date("!%Y-%m-%dT%TZ")
 		}}
 	}
-	request({
-		Url = webhookUrl,
-		Method = "POST",
-		Headers = { ["Content-Type"] = "application/json" },
-		Body = HttpService:JSONEncode(data)
-	})
+
+	local success, err = pcall(function()
+		request({
+			Url = webhookUrl,
+			Method = "POST",
+			Headers = { ["Content-Type"] = "application/json" },
+			Body = HttpService:JSONEncode(payload)
+		})
+	end)
+	if not success then
+		warn("❌ Webhook ส่งไม่สำเร็จ:", err)
+	end
 end
 
-local function sendNewItemWebhook(name)
+function sendNewItemWebhook(name)
 	local cat = classifyItem(name)
 	if not cat then return end
-
 	local avatarUrl = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
-	local data = {
+	local payload = {
 		username = "RTaO HUB",
 		avatar_url = avatarUrl,
 		embeds = {{
@@ -290,15 +205,20 @@ local function sendNewItemWebhook(name)
 			timestamp = os.date("!%Y-%m-%dT%TZ")
 		}}
 	}
-	request({
-		Url = webhookUrl,
-		Method = "POST",
-		Headers = { ["Content-Type"] = "application/json" },
-		Body = HttpService:JSONEncode(data)
-	})
+	local success, err = pcall(function()
+		request({
+			Url = webhookUrl,
+			Method = "POST",
+			Headers = { ["Content-Type"] = "application/json" },
+			Body = HttpService:JSONEncode(payload)
+		})
+	end)
+	if not success then
+		warn("❌ ส่ง Webhook ไม่สำเร็จ:", err)
+	end
 end
 
---== INITIAL SCAN ==--
+--== BACKPACK TRACKING ==--
 for _, item in ipairs(backpack:GetChildren()) do
 	local cat = classifyItem(item.Name)
 	if cat then
