@@ -133,11 +133,17 @@ btnTheme = makeButton(165, "🎨 เปลี่ยนธีม", theme.button, 
             btn.BackgroundColor3 = theme.button
         end
     end
+    itemSummary.TextColor3 = theme.text
 end)
 
-makeButton(200, "❌ ปิด UI", Color3.fromRGB(160, 60, 60), function()
-    frame.Visible = false
+--== ปรับตำแหน่งปุ่มรายการของทั้งหมดให้อยู่ล่าง ไม่ทับข้อความ ==
+local btnItems = makeButton(270, "📋 รายการของทั้งหมด", theme.button, function()
+    updatePopup()
+    popup.Visible = true
 end)
+
+--== ลบปุ่ม ❌ ปิด UI ออก ==
+-- (ตัดโค้ด makeButton(200, "❌ ปิด UI", ...) ออกไปเลย)
 
 --== TOGGLE BY ICON ==--
 toggleIcon.MouseButton1Click:Connect(function()
@@ -150,9 +156,22 @@ local function sendWebhook(fields, title)
     local embedFields = {}
     for cat, items in pairs(fields) do
         if #items > 0 then
+            -- แก้ไขให้ตัด [X###] ออกจากชื่อ item และแสดงจำนวนจริงแทน x1
+            local cleanItems = {}
+            for _, item in ipairs(items) do
+                -- item ตัวอย่าง: "Apple Seed [X678]"
+                local nameOnly = item:gsub("%[X%d+%]", ""):gsub("^%s*(.-)%s*$", "%1")
+                local countStr = item:match("%[X(%d+)%]")
+                if countStr then
+                    table.insert(cleanItems, nameOnly .. " x" .. countStr)
+                else
+                    table.insert(cleanItems, item)
+                end
+            end
+
             table.insert(embedFields, {
                 name = categoryNames[cat],
-                value = table.concat(items, "\n"),
+                value = table.concat(cleanItems, "\n"),
                 inline = false
             })
         end
@@ -183,7 +202,12 @@ function sendAllWebhook(customTitle)
     for name, count in pairs(itemCounter) do
         local cat = classifyItem(name)
         if cat then
-            table.insert(fields[cat], name .. " x" .. count)
+            -- ส่งชื่อ item แบบมี [X###] แทนจำนวนจริงเพื่อใช้ใน sendWebhook แก้ชื่อพร้อมจำนวน
+            local newName = name
+            if not name:find("%[X%d+%]") then
+                newName = name .. " [X" .. count .. "]"
+            end
+            table.insert(fields[cat], newName)
         end
     end
     sendWebhook(fields, customTitle or "📦 รายการของทั้งหมดใน Backpack")
@@ -233,6 +257,8 @@ backpack.ChildAdded:Connect(function(item)
         knownItems[name] = true
         sendNewItemWebhook(name)
     end
+    updateItemSummary()
+    updatePopup()
 end)
 
 task.spawn(function()
@@ -243,9 +269,10 @@ task.spawn(function()
         task.wait(1200)
     end
 end)
+
 --== 📦 DISPLAY ITEM SUMMARY ==--
 local itemSummary = Instance.new("TextLabel", frame)
-itemSummary.Position = UDim2.new(0.05, 0, 0, 235)
+itemSummary.Position = UDim2.new(0.05, 0, 0, 230) -- ปรับตำแหน่งให้พ้นปุ่ม
 itemSummary.Size = UDim2.new(0.9, 0, 0, 50)
 itemSummary.TextColor3 = theme.text
 itemSummary.Font = Enum.Font.Gotham
@@ -270,21 +297,6 @@ end
 -- เรียกตอนเริ่ม
 updateItemSummary()
 
---== UPDATE SUMMARY WHEN ITEM ADDED ==--
-backpack.ChildAdded:Connect(function(item)
-    local name = item.Name
-    local cat = classifyItem(name)
-    if not cat then return end
-
-    itemCounter[name] = (itemCounter[name] or 0) + 1
-    if notifyNew and not knownItems[name] then
-        knownItems[name] = true
-        sendNewItemWebhook(name)
-    end
-
-    updateItemSummary() -- อัปเดต UI
-end)
-
 --== 🔃 ปุ่ม UI Toggle (อยู่นอก frame และลากได้) ==--
 local toggleUIBtn = Instance.new("TextButton", mainGui)
 toggleUIBtn.Name = "ToggleUI"
@@ -305,6 +317,7 @@ toggleUIBtn.MouseButton1Click:Connect(function()
 	uiVisible = not uiVisible
 	frame.Visible = uiVisible
 end)
+
 --== 📋 POPUP แสดงรายการของทั้งหมดแบบแยกหมวดหมู่ ==--
 
 -- สร้าง Frame Popup
@@ -354,12 +367,6 @@ popupContent.TextYAlignment = Enum.TextYAlignment.Top
 popupContent.TextXAlignment = Enum.TextXAlignment.Left
 popupContent.Text = "📦 กำลังโหลด..."
 
--- ปุ่มกดเพื่อเปิด popup
-makeButton(235, "📋 รายการของทั้งหมด", theme.button, function()
-	updatePopup()
-	popup.Visible = true
-end)
-
 -- ฟังก์ชันแสดงของทั้งหมดแบบแยกหมวดหมู่
 function updatePopup()
 	local lines = {}
@@ -405,5 +412,3 @@ end
 backpack.ChildAdded:Connect(function()
 	updatePopup()
 end)
-
-
