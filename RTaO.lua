@@ -1,5 +1,5 @@
 --== CONFIG ==--
-local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ webhook ของคุณ
+local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe"
 local themes = {
     Default = {
         background = Color3.fromRGB(30, 30, 60),
@@ -54,20 +54,18 @@ local mainGui = Instance.new("ScreenGui", CoreGui)
 mainGui.Name = "RT_UI_MAIN"
 mainGui.ResetOnSpawn = false
 
---== DRAGGABLE ICON BUTTON ==--
 local toggleIcon = Instance.new("ImageButton", mainGui)
 toggleIcon.Name = "ToggleButton"
-toggleIcon.Image = "rbxassetid://70576862346242" -- ไอคอนตามต้องการ
+toggleIcon.Image = "rbxassetid://70576862346242"
 toggleIcon.Size = UDim2.new(0, 40, 0, 40)
 toggleIcon.Position = UDim2.new(0, 20, 0.5, -20)
 toggleIcon.BackgroundTransparency = 1
 toggleIcon.Active = true
 toggleIcon.Draggable = true
 
---== UI FRAME ==--
 local frame = Instance.new("Frame", mainGui)
 frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 250, 0, 240)
+frame.Size = UDim2.new(0, 250, 0, 275)
 frame.Position = UDim2.new(0.5, -125, 0.4, 0)
 frame.BackgroundColor3 = theme.background
 frame.Visible = true
@@ -92,7 +90,6 @@ status.Font = Enum.Font.Gotham
 status.TextSize = 14
 status.Text = "Status: 🟢 Online | " .. player.Name
 
---== BUTTON FACTORY ==--
 local function makeButton(y, text, color, callback)
     local btn = Instance.new("TextButton", frame)
     btn.Position = UDim2.new(0.05, 0, 0, y)
@@ -107,20 +104,24 @@ local function makeButton(y, text, color, callback)
 end
 
 local btnNew, btnAll, btnSend, btnTheme
+local contentButtons = {}
 
 btnNew = makeButton(60, "🆕 แจ้งของใหม่: ✅ เปิด", theme.button, function()
     notifyNew = not notifyNew
     btnNew.Text = "🆕 แจ้งของใหม่: " .. (notifyNew and "✅ เปิด" or "❌ ปิด")
 end)
+table.insert(contentButtons, btnNew)
 
 btnAll = makeButton(95, "📦 ส่งทุก 20 นาที: ✅ เปิด", theme.button, function()
     notifyAll = not notifyAll
     btnAll.Text = "📦 ส่งทุก 20 นาที: " .. (notifyAll and "✅ เปิด" or "❌ ปิด")
 end)
+table.insert(contentButtons, btnAll)
 
 btnSend = makeButton(130, "🚀 ส่งรายงานทันที", theme.button, function()
     sendAllWebhook("📦 รายงานทั้งหมด (ทันที)")
 end)
+table.insert(contentButtons, btnSend)
 
 btnTheme = makeButton(165, "🎨 เปลี่ยนธีม", theme.button, function()
     theme = (theme == themes.Default and themes.RoseGold) or themes.Default
@@ -134,9 +135,21 @@ btnTheme = makeButton(165, "🎨 เปลี่ยนธีม", theme.button, 
         end
     end
 end)
+table.insert(contentButtons, btnTheme)
 
-makeButton(200, "❌ ปิด UI", Color3.fromRGB(160, 60, 60), function()
+local btnClose = makeButton(200, "❌ ปิด UI", Color3.fromRGB(160, 60, 60), function()
     frame.Visible = false
+end)
+table.insert(contentButtons, btnClose)
+
+local isCollapsed = false
+local btnCollapse = makeButton(235, "🔽 ซ่อนเมนู", theme.button, function()
+    isCollapsed = not isCollapsed
+    for _, btn in ipairs(contentButtons) do
+        btn.Visible = not isCollapsed
+    end
+    btnCollapse.Text = isCollapsed and "🔼 แสดงเมนู" or "🔽 ซ่อนเมนู"
+    frame.Size = isCollapsed and UDim2.new(0, 250, 0, 60) or UDim2.new(0, 250, 0, 275)
 end)
 
 --== TOGGLE BY ICON ==--
@@ -146,6 +159,12 @@ toggleIcon.MouseButton1Click:Connect(function()
 end)
 
 --== WEBHOOK HELPERS ==--
+local function cleanItemName(name)
+    name = name:gsub(" x%d+$", "")
+    name = name:gsub(" %[X%d+%]", "")
+    return name
+end
+
 local function sendWebhook(fields, title)
     local embedFields = {}
     for cat, items in pairs(fields) do
@@ -183,7 +202,8 @@ function sendAllWebhook(customTitle)
     for name, count in pairs(itemCounter) do
         local cat = classifyItem(name)
         if cat then
-            table.insert(fields[cat], name .. " x" .. count)
+            local cleanedName = cleanItemName(name)
+            table.insert(fields[cat], cleanedName .. " = " .. count)
         end
     end
     sendWebhook(fields, customTitle or "📦 รายการของทั้งหมดใน Backpack")
@@ -199,7 +219,7 @@ local function sendNewItemWebhook(name)
             color = 16753920,
             fields = {{
                 name = categoryNames[cat],
-                value = "**" .. name .. "** ",
+                value = "**" .. cleanItemName(name) .. "**",
                 inline = false
             }},
             footer = { text = "👤 Roblox: " .. player.Name },
@@ -214,7 +234,6 @@ local function sendNewItemWebhook(name)
     })
 end
 
---== INIT DATA ==--
 for _, item in ipairs(backpack:GetChildren()) do
     local cat = classifyItem(item.Name)
     if cat then
@@ -227,7 +246,6 @@ backpack.ChildAdded:Connect(function(item)
     local name = item.Name
     local cat = classifyItem(name)
     if not cat then return end
-
     itemCounter[name] = (itemCounter[name] or 0) + 1
     if notifyNew and not knownItems[name] then
         knownItems[name] = true
@@ -243,3 +261,4 @@ task.spawn(function()
         task.wait(1200)
     end
 end)
+
