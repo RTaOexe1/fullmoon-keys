@@ -54,15 +54,7 @@ local mainGui = Instance.new("ScreenGui", CoreGui)
 mainGui.Name = "RT_UI_MAIN"
 mainGui.ResetOnSpawn = false
 
-local toggleIcon = Instance.new("ImageButton", mainGui)
-toggleIcon.Name = "ToggleButton"
-toggleIcon.Image = "rbxassetid://70576862346242"
-toggleIcon.Size = UDim2.new(0, 40, 0, 40)
-toggleIcon.Position = UDim2.new(0, 20, 0.5, -20)
-toggleIcon.BackgroundTransparency = 1
-toggleIcon.Active = true
-toggleIcon.Draggable = true
-
+-- UI หลัก
 local frame = Instance.new("Frame", mainGui)
 frame.Name = "MainFrame"
 frame.Size = UDim2.new(0, 250, 0, 275)
@@ -139,23 +131,26 @@ table.insert(contentButtons, btnTheme)
 
 local btnClose = makeButton(200, "❌ ปิด UI", Color3.fromRGB(160, 60, 60), function()
     frame.Visible = false
+    toggleSmallBtn.Visible = true
 end)
 table.insert(contentButtons, btnClose)
 
-local isCollapsed = false
-local btnCollapse = makeButton(235, "🔽 ซ่อนเมนู", theme.button, function()
-    isCollapsed = not isCollapsed
-    for _, btn in ipairs(contentButtons) do
-        btn.Visible = not isCollapsed
-    end
-    btnCollapse.Text = isCollapsed and "🔼 แสดงเมนู" or "🔽 ซ่อนเมนู"
-    frame.Size = isCollapsed and UDim2.new(0, 250, 0, 60) or UDim2.new(0, 250, 0, 275)
-end)
+--== ปุ่มเล็กแยกสำหรับเปิด-ปิด UI ==
+local toggleSmallBtn = Instance.new("TextButton", CoreGui)
+toggleSmallBtn.Name = "ToggleSmallBtn"
+toggleSmallBtn.Text = "🗂 เปิด/ปิด UI"
+toggleSmallBtn.Size = UDim2.new(0, 80, 0, 30)
+toggleSmallBtn.Position = UDim2.new(0, 20, 0.6, 0)
+toggleSmallBtn.BackgroundColor3 = theme.button
+toggleSmallBtn.TextColor3 = Color3.new(1,1,1)
+toggleSmallBtn.Font = Enum.Font.GothamBold
+toggleSmallBtn.TextSize = 14
+toggleSmallBtn.Visible = false
 
---== TOGGLE BY ICON ==--
-toggleIcon.MouseButton1Click:Connect(function()
+toggleSmallBtn.MouseButton1Click:Connect(function()
     uiVisible = not uiVisible
     frame.Visible = uiVisible
+    toggleSmallBtn.Visible = not uiVisible
 end)
 
 --== WEBHOOK HELPERS ==--
@@ -203,7 +198,7 @@ function sendAllWebhook(customTitle)
         local cat = classifyItem(name)
         if cat then
             local cleanedName = cleanItemName(name)
-            table.insert(fields[cat], cleanedName .. " = " .. count)
+            table.insert(fields[cat], cleanedName .. " x" .. count)
         end
     end
     sendWebhook(fields, customTitle or "📦 รายการของทั้งหมดใน Backpack")
@@ -234,6 +229,7 @@ local function sendNewItemWebhook(name)
     })
 end
 
+--== INIT DATA ==--
 for _, item in ipairs(backpack:GetChildren()) do
     local cat = classifyItem(item.Name)
     if cat then
@@ -261,4 +257,3 @@ task.spawn(function()
         task.wait(1200)
     end
 end)
-
