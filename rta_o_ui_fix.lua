@@ -3,7 +3,7 @@
  กับปุ่ม 🔃 UI ในโค้ดนี้ครับ
 โค้ดนี้ใช้ได้ 
 --== CONFIG ==--
-local webhookUrl = "https://discord.com/api/webhooks/1388880050824417280/OOshdBuNNWg5yewhkm1lpeUzV5CiR2ziq-WVo0rpRWWOHuYl_q9K7_pDQf2HpaLKtCbe" -- ใส่ webhook ของคุณ
+local webhookUrl = "webhookURL...." -- ใส่ webhook ของคุณ
 local themes = {
     Default = {
         background = Color3.fromRGB(30, 30, 60),
