@@ -5,7 +5,7 @@ end
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "HLemon Hub | Dig Games [Premium Script]",
+   Name = "RTaO Hub | Dig Games | RTaO DEV",
    Icon = 133520378097790,
    LoadingTitle = "DiG Game Script [Premium Script] @Han",
    LoadingSubtitle = "Join Discord HlemonHub",
@@ -19,7 +19,7 @@ local Window = Rayfield:CreateWindow({
    },
    Discord = {
       Enabled = true,
-      Invite = "ECxQFc97F5",
+      Invite = "RTaO_RS",
       RememberJoins = true
    },
    KeySystem = False,
