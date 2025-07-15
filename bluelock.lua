@@ -3,8 +3,8 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 -- Criar a janela principal do script
 local window = Fluent:CreateWindow({
-    Title = "Blue Lock: Rivals Hub",
-    SubTitle = "by Grok",
+    Title = "RTaO HUB",
+    SubTitle = "by rtao",
     TabWidth = 160,
     Size = UDim2.new(0, 580, 0, 460),
     Acrylic = true,
