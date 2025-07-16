@@ -145,7 +145,74 @@ GameplaySection:AddButton({
 })
 
 local MacroTab = Window:AddTab({ Title = "Macro", Icon = "rbxassetid://7734053495" })
+local MacroSection = MacroTab:AddSection("🎥 Macro Recorder")
 
--- (ส่วนอื่น ๆ ของสคริปต์ เช่น macro recorder, settings tab, UI logo button ฯลฯ สามารถนำมาต่อในสคริปต์นี้ได้ต่อเนื่อง)
+local MacroRecorderToggle = MacroSection:AddToggle("MacroRecorderToggle", {
+    Title = "🎥 Record Macro (Place / Upgrade / Sell)",
+    Default = false,
+    Description = "Enable to start recording macro. Disable to stop & save.",
+    Callback = function(val)
+        if val then
+            if getgenv().recording then
+                warn("🚫 Macro is already running.")
+                return
+            end
+            getgenv().recording = true
+            getgenv().macroSteps = {}
+            getgenv().stepIndex = 0
+            print("🎬 Macro recording started...")
+        else
+            if not getgenv().recording then
+                warn("⚠️ Macro is not enabled.")
+                return
+            end
+            getgenv().recording = false
+            print("🛑 Macro stopped.")
+
+            local saveData = getgenv().macroSteps
+            saveData["Data"] = {
+                Map = "UnknownMap",
+                RecordMode = "Money",
+                Units = {}
+            }
+
+            local HttpService = game:GetService("HttpService")
+            local player = game:GetService("Players").LocalPlayer
+            local fileName = "Macro_" .. player.Name .. ".json"
+            if writefile then
+                writefile(fileName, HttpService:JSONEncode(saveData))
+                print("💾 Macro saved to", fileName)
+            else
+                warn("⚠ Executor does not support writefile.")
+            end
+        end
+    end
+})
+
+MacroSection:AddButton({
+    Title = "📂 Load Macro",
+    Description = "Load a saved macro file",
+    Callback = function()
+        local fileName = "Macro_" .. game:GetService("Players").LocalPlayer.Name .. ".json"
+        if isfile(fileName) then
+            local content = readfile(fileName)
+            local data = game:GetService("HttpService"):JSONDecode(content)
+            print("📂 Macro loaded successfully!")
+            print("Steps found:", #data)
+        else
+            warn("❌ No macro file found: " .. fileName)
+        end
+    end
+})
+
+MacroSection:AddButton({
+    Title = "🗑️ Clear Macro",
+    Description = "Clear current macro data",
+    Callback = function()
+        getgenv().macroSteps = {}
+        getgenv().stepIndex = 0
+        print("🗑️ Macro data cleared")
+    end
+})
 
 print("✅ RTaO Hub | Script loaded with FluentPlus alpha")
