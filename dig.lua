@@ -5,10 +5,10 @@ end
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "RTaO Hub | Dig Games | RTaO DEV",
+   Name = "RTaO Dev | Dig Games ",
    Icon = 133520378097790,
-   LoadingTitle = "DiG Game Script [Premium Script] @Han",
-   LoadingSubtitle = "Join Discord HlemonHub",
+   LoadingTitle = "DiG Game Script [Premium Script]",
+   LoadingSubtitle = "Join Discord RTaO",
    Theme = "DarkBlue",
    DisableRayfieldPrompts = false,
    DisableBuildWarnings = false,
