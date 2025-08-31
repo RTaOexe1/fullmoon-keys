@@ -1513,7 +1513,7 @@ local function InitializeWalvyCommunity()
 end
 
 -- Expose initialization function
-getgenv().InitializeRTaOCommunity = InitializeRTaOCommunity
+getgenv().InitializeWalvyCommunity = InitializeWalvyCommunity
 
-print("RTaO Dev script loaded. Call InitializeRTaOCommunity() to start.")
-InitializeRTaOCommunity()
+print("RTaO script loaded. Call InitializeWalvyCommunity() to start.")
+InitializeWalvyCommunity()
