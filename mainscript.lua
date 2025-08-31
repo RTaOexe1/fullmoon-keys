@@ -73,8 +73,8 @@ local currentJobId = ""
 local HopeserverEnabled = false
 
 -- Webhook URLs
-local brainrotGodWebhook = "https://discord.com/api/webhooks/1403020016923840643/NVDaViV5IWBCWTKx3EZA6N0rN9ZSyIPsi_7X3Yx6dVKLMga_esp4FjC5qvvQJLZpmApH"
-local brainrotSecretWebhook = "https://discord.com/api/webhooks/1403020144640397492/Y_097rV0AHxVOKMgJZBBR7A2gtndlYPAAk6AHmciirgwWBK4QPF5blZ0FXDR9W3MJkrc"
+local brainrotGodWebhook = "https://discord.com/api/webhooks/1410824966542463026/CDswqxT0HIdJ0v_MQC6XQ_CKls9W3rBOIxnuIcF-2rdkdoI7nvr9_I-98LQ5OmxIKbQJ"
+local brainrotSecretWebhook = "https://discord.com/api/webhooks/1410825478146621440/wDBg1AdUeVWRMgMCjYKn2GyJzVLnhXjPAJ0ByvLzmy8z-IIctkyRuCxqOVHLrdmahNP5"
 
 -- Brainrot Pricing
 local brainrotGodPrices = {
@@ -172,7 +172,7 @@ local function InitializeWalvyCommunity()
         Opened = true
     })
     InfoTab:Paragraph({
-        Title = "Welcome To Walvy Community",
+        Title = "Welcome To RTaO Script",
         Desc = "Game Version: Steal A Brainrot",
         Image = "rbxassetid://114691672281339",
         ImageSize = 40,
@@ -218,7 +218,7 @@ local function InitializeWalvyCommunity()
         Title = "Join Our Discord",
         Desc = "Click to copy our Discord link.",
         Callback = function()
-            if safeSetClipboard("https://discord.gg/kWC8Nn7kne") then
+            if safeSetClipboard("https://discord.gg/EH23mXVqce") then
                 WindUI:Notify({
                     Title = "Discord",
                     Content = "Discord link copied to clipboard!",
@@ -1505,7 +1505,7 @@ local function InitializeWalvyCommunity()
     updateCharacter()
 
     WindUI:Notify({
-        Title = "Walvy Community",
+        Title = "RTaO Script",
         Content = "Script loaded. Use the GUI to enable features manually.",
         Icon = "rbxassetid://114691672281339",
         Duration = 5
@@ -1513,7 +1513,7 @@ local function InitializeWalvyCommunity()
 end
 
 -- Expose initialization function
-getgenv().InitializeWalvyCommunity = InitializeWalvyCommunity
+getgenv().InitializeRTaOCommunity = InitializeRTaOCommunity
 
-print("Walvy Community script loaded. Call InitializeWalvyCommunity() to start.")
-InitializeWalvyCommunity()
+print("RTaO Dev script loaded. Call InitializeRTaOCommunity() to start.")
+InitializeRTaOCommunity()
